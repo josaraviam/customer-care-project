@@ -1,63 +1,165 @@
 from fastapi import APIRouter, HTTPException
-from app.models.comentario_model import Comentario
-from app.db.mongodb_connector import mongo_db
-from bson.objectid import ObjectId
-from utils.helpers import format_api_response, handle_api_error
+from typing import List
+from app.schemas.caso_schema import Caso
+from app.db.mysql_connector import mysql_connection
 
 router = APIRouter()
 
-# Crear un comentario
-@router.post("/")
-def create_comentario(comentario: Comentario):
+@router.post("/", response_model=Caso)
+def create_caso(caso: Caso):
+    """
+    Crea un nuevo caso en la base de datos.
+    """
     try:
-        result = mongo_db["comentarios"].insert_one(comentario.dict())
-        return format_api_response("success", "Comentario registrado exitosamente.", {"id": str(result.inserted_id)})
+        with mysql_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO casos (fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    caso.fecha_contacto,
+                    caso.canal_contacto,
+                    caso.pnr,
+                    caso.tipo_caso,
+                    caso.comentarios,
+                ))
+                connection.commit()
+        return caso
     except Exception as e:
-        return handle_api_error(e)
+        raise HTTPException(status_code=500, detail=f"Error al crear el caso: {e}")
 
-# Obtener todos los comentarios
-@router.get("/")
-def get_comentarios():
+@router.get("/", response_model=List[Caso])
+def list_casos():
+    """
+    Devuelve una lista de todos los casos almacenados.
+    """
     try:
-        comentarios = list(mongo_db["comentarios"].find())
-        for comentario in comentarios:
-            comentario["_id"] = str(comentario["_id"])
-        return format_api_response("success", "Comentarios obtenidos exitosamente.", comentarios)
+        with mysql_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios 
+                    FROM casos
+                """)
+                rows = cursor.fetchall()
+
+        casos = [
+            Caso(
+                id_caso=row[0],
+                fecha_contacto=row[1].strftime("%Y-%m-%d") if row[1] else None,
+                canal_contacto=row[2],
+                pnr=row[3],
+                tipo_caso=row[4],
+                comentarios=row[5],
+            )
+            for row in rows
+        ]
+        return casos
     except Exception as e:
-        return handle_api_error(e)
+        raise HTTPException(status_code=500, detail=f"Error al obtener los casos: {e}")
 
-# Obtener un comentario por ID
-@router.get("/{comentario_id}")
-def get_comentario(comentario_id: str):
+@router.get("/pnr/{pnr}", response_model=List[Caso])
+def get_caso_by_pnr(pnr: str):
+    """
+    Busca casos por el PNR asociado.
+    """
     try:
-        comentario = mongo_db["comentarios"].find_one({"_id": ObjectId(comentario_id)})
-        if not comentario:
-            raise HTTPException(status_code=404, detail="Comentario no encontrado")
-        comentario["_id"] = str(comentario["_id"])
-        return format_api_response("success", "Comentario obtenido exitosamente.", comentario)
+        with mysql_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios
+                    FROM casos
+                    WHERE pnr = %s
+                """, (pnr,))
+                rows = cursor.fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=404, detail="No se encontraron casos para el PNR proporcionado.")
+
+        casos = [
+            Caso(
+                id_caso=row[0],
+                fecha_contacto=row[1].strftime("%Y-%m-%d") if row[1] else None,
+                canal_contacto=row[2],
+                pnr=row[3],
+                tipo_caso=row[4],
+                comentarios=row[5],
+            )
+            for row in rows
+        ]
+        return casos
     except Exception as e:
-        return handle_api_error(e)
+        raise HTTPException(status_code=500, detail=f"Error al buscar los casos por PNR: {e}")
 
-# Actualizar un comentario
-@router.put("/{comentario_id}")
-def update_comentario(comentario_id: str, comentario: Comentario):
+@router.get("/{caso_id}", response_model=Caso)
+def get_caso(caso_id: int):
+    """
+    Busca un caso por su ID único.
+    """
     try:
-        result = mongo_db["comentarios"].update_one(
-            {"_id": ObjectId(comentario_id)}, {"$set": comentario.dict()}
+        with mysql_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios
+                    FROM casos
+                    WHERE id_caso = %s
+                """, (caso_id,))
+                row = cursor.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Caso no encontrado.")
+
+        return Caso(
+            id_caso=row[0],
+            fecha_contacto=row[1].strftime("%Y-%m-%d") if row[1] else None,
+            canal_contacto=row[2],
+            pnr=row[3],
+            tipo_caso=row[4],
+            comentarios=row[5],
         )
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Comentario no encontrado")
-        return format_api_response("success", "Comentario actualizado exitosamente.")
     except Exception as e:
-        return handle_api_error(e)
+        raise HTTPException(status_code=500, detail=f"Error al buscar el caso: {e}")
 
-# Eliminar un comentario
-@router.delete("/{comentario_id}")
-def delete_comentario(comentario_id: str):
+@router.put("/{caso_id}", response_model=Caso)
+def update_caso(caso_id: int, caso: Caso):
+    """
+    Actualiza un caso existente.
+    """
     try:
-        result = mongo_db["comentarios"].delete_one({"_id": ObjectId(comentario_id)})
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Comentario no encontrado")
-        return format_api_response("success", "Comentario eliminado exitosamente.")
+        with mysql_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE casos
+                    SET fecha_contacto = %s, canal_contacto = %s, pnr = %s, tipo_caso = %s, comentarios = %s
+                    WHERE id_caso = %s
+                """, (
+                    caso.fecha_contacto,
+                    caso.canal_contacto,
+                    caso.pnr,
+                    caso.tipo_caso,
+                    caso.comentarios,
+                    caso_id,
+                ))
+                connection.commit()
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Caso no encontrado.")
+        return caso
     except Exception as e:
-        return handle_api_error(e)
+        raise HTTPException(status_code=500, detail=f"Error al actualizar el caso: {e}")
+
+@router.delete("/{caso_id}")
+def delete_caso(caso_id: int):
+    """
+    Elimina un caso por su ID único.
+    """
+    try:
+        with mysql_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM casos WHERE id_caso = %s", (caso_id,))
+                connection.commit()
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Caso no encontrado.")
+        return {"detail": "Caso eliminado exitosamente."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar el caso: {e}")

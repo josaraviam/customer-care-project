@@ -4,3 +4,4 @@ pymysql
 pymongo
 python-dotenv
 cryptography
+requests

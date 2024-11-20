@@ -1,9 +1,13 @@
 from pydantic import BaseModel
-from datetime import datetime
+from typing import List, Optional
+
 
 class Caso(BaseModel):
-    fecha_contacto: datetime
+    id_caso: int
+    fecha_contacto: str
     canal_contacto: str
-    PNR: str
+    pnr: str
     tipo_caso: str
-    comentarios_agente: str
+    comentarios: str
+
+

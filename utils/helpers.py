@@ -1,36 +1,30 @@
 from datetime import datetime
 
-# Validar formato de fecha
-def validate_date_format(date_string, format="%Y-%m-%d"):
+
+def validate_date_format(date_input, date_format):
+    """
+    Valida si la entrada es una fecha válida en un formato específico.
+    Puede recibir un objeto `datetime` o una cadena.
+    """
+    if isinstance(date_input, datetime):
+        # Si ya es un objeto datetime, validamos su formato convirtiéndolo a string
+        date_input = date_input.strftime(date_format)
     try:
-        datetime.strptime(date_string, format)
+        datetime.strptime(date_input, date_format)
         return True
     except ValueError:
         return False
 
-# Formatear datos para respuestas de la API
-def format_api_response(status, message, data=None):
-    response = {
-        "status": status,
-        "message": message,
-    }
-    if data is not None:
-        response["data"] = data
-    return response
 
-# Manejar errores en las rutas de la API
+def format_api_response(data, message="Operación exitosa"):
+    """
+    Formatea la respuesta para las API.
+    """
+    return {"data": data, "message": message}
+
+
 def handle_api_error(error):
-    print(f"Error ocurrido: {error}")
-    return {
-        "status": "error",
-        "message": str(error)
-    }
-
-# Función para validar entradas de texto
-def validate_non_empty_string(value, field_name="Campo"):
-    if not value or not isinstance(value, str):
-        raise ValueError(f"{field_name} no puede estar vacío y debe ser una cadena de texto.")
-
-# Obtener el tiempo actual formateado
-def get_current_timestamp():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """
+    Maneja errores y devuelve un formato estándar para respuestas de error.
+    """
+    return {"error": str(error)}

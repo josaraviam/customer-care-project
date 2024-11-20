@@ -1,60 +1,56 @@
 import pymysql
-from app.config import MYSQL_USER, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_DB
 from contextlib import contextmanager
+from app.config import MYSQL_USER, MYSQL_PASSWORD, MYSQL_HOST, MYSQL_PORT, MYSQL_DB
 
-# Función para obtener una conexión a MySQL
+
 def get_mysql_connection():
-    connection = pymysql.connect(
-        host=MYSQL_HOST,
-        user=MYSQL_USER,
-        password=MYSQL_PASSWORD,
-        database=MYSQL_DB
-    )
-    return connection
+    """
+    Conecta a la base de datos MySQL en Amazon RDS.
+    """
+    try:
+        connection = pymysql.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DB,
+            port=int(MYSQL_PORT),
+        )
+        return connection
+    except pymysql.MySQLError as e:
+        print(f"Error al conectar a MySQL: {e}")
+        raise
 
-# Context manager para manejar conexiones automáticamente
+
 @contextmanager
 def mysql_connection():
+    """
+    Context manager para manejar conexiones automáticamente.
+    """
     connection = get_mysql_connection()
     try:
         yield connection
     finally:
         connection.close()
 
-# Función para inicializar la estructura de la base de datos
+
 def initialize_database():
-    with mysql_connection() as connection:
-        try:
+    """
+    Inicializa las tablas de la base de datos si no existen.
+    """
+    try:
+        with mysql_connection() as connection:
             with connection.cursor() as cursor:
-                # Crear tabla de casos
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS casos (
                         id_caso INT AUTO_INCREMENT PRIMARY KEY,
-                        fecha_contacto DATETIME NOT NULL,
-                        canal_contacto VARCHAR(50) NOT NULL,
-                        PNR VARCHAR(10),
-                        tipo_caso VARCHAR(50),
-                        comentarios_agente TEXT
-                    );
+                        fecha_contacto DATE,
+                        canal_contacto VARCHAR(255),
+                        pnr VARCHAR(255),
+                        tipo_caso VARCHAR(255),
+                        comentarios TEXT
+                    )
                 """)
-
-                # Crear tabla de canales
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS canales (
-                        id_canal INT AUTO_INCREMENT PRIMARY KEY,
-                        nombre_canal VARCHAR(50) UNIQUE
-                    );
-                """)
-
-                # Crear tabla de tipos de caso
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS tipos_caso (
-                        id_tipo_caso INT AUTO_INCREMENT PRIMARY KEY,
-                        nombre_tipo_caso VARCHAR(50) UNIQUE
-                    );
-                """)
-
                 connection.commit()
-                print("Estructura de la base de datos inicializada correctamente.")
-        except Exception as e:
-            print(f"Error al inicializar la base de datos: {e}")
+        print("Tablas inicializadas correctamente.")
+    except Exception as e:
+        print(f"Error al inicializar la base de datos: {e}")

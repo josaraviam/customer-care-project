@@ -1,18 +1,17 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from app.schemas.comentario_schema import Comentario
-
+from app.schemas.comentario_schema import Comentario  # Importa el esquema Comentario
 
 class Caso(BaseModel):
-    id_caso: Optional[int] = Field(None, description="ID único del caso, generado automáticamente.")
-    fecha_contacto: str = Field(..., description="Fecha en que se generó el contacto.")
-    canal_contacto: str = Field(..., description="Canal por el que se generó el contacto (FB, TW, IG, WA).")
-    pnr: str = Field(..., min_length=6, max_length=6, description="PNR único asociado al caso.")
-    tipo_caso: str = Field(..., description="Tipo de caso (Reclamo, Consulta, etc.).")
+    id_caso: Optional[int] = Field(None, description="ID único del caso en la base de datos.")
+    fecha_contacto: str = Field(..., description="Fecha del contacto en formato YYYY-MM-DD.")
+    canal_contacto: str = Field(..., description="Canal de contacto asociado al caso.")
+    pnr: str = Field(..., min_length=6, max_length=6, description="PNR único del caso.")
+    tipo_caso: str = Field(..., description="Tipo de caso.")
     comentarios: List[Comentario] = Field([], description="Lista de comentarios asociados al caso.")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id_caso": 1,
                 "fecha_contacto": "2024-11-20",
@@ -21,13 +20,13 @@ class Caso(BaseModel):
                 "tipo_caso": "Reclamo",
                 "comentarios": [
                     {
-                        "_id": "64b2c2f70ad94e001c2c8b85",
+                        "_id": "64b37bc7d2f5f8e5e3b76c39",
                         "pnr": "ABC123",
-                        "tags": ["Reclamo", "Urgente"],
+                        "tags": ["urgente", "reembolso"],
                         "canal_contacto": "Facebook",
-                        "estado": "Pendiente",
-                        "texto": "Cliente solicita reembolso.",
-                        "fecha_creacion": "2024-11-20T15:32:00",
+                        "estado": "pendiente",
+                        "texto": "El cliente solicita reembolso.",
+                        "fecha_creacion": "2024-11-20T14:30:00Z",
                         "usuario": "admin@example.com"
                     }
                 ]

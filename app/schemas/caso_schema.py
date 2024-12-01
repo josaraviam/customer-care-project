@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from app.schemas.comentario_schema import Comentario  # Importa el esquema Comentario
 
+
 class Caso(BaseModel):
     id_caso: Optional[int] = Field(None, description="ID único del caso en la base de datos.")
     fecha_contacto: str = Field(..., description="Fecha del contacto en formato YYYY-MM-DD.")

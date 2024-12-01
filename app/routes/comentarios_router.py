@@ -8,6 +8,16 @@ from app.utils.jwt_utils import get_current_user, is_admin
 
 router = APIRouter()
 
+from fastapi import APIRouter, HTTPException, Depends
+from typing import List
+from datetime import datetime
+from bson import ObjectId  # Import necesario para trabajar con ObjectId
+from app.schemas.comentario_schema import ComentarioCreate, Comentario
+from app.db.mongodb_connector import mongo_db
+from app.utils.jwt_utils import get_current_user, is_admin
+
+router = APIRouter()
+
 
 @router.post("/", response_model=Comentario)
 def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(get_current_user)):
@@ -23,10 +33,11 @@ def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(
             "tags": comentario.tags,
             "canal_contacto": comentario.canal_contacto,
             "estado": comentario.estado,
+            "texto": comentario.texto,
         }
 
         result = mongo_db["comentarios"].insert_one(nuevo_comentario)
-        nuevo_comentario["_id"] = str(result.inserted_id)  # Convertir ObjectId a string
+        nuevo_comentario["id_comentario"] = str(result.inserted_id)  # Convertir ObjectId a string y renombrar
         return nuevo_comentario
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear el comentario: {e}")
@@ -44,7 +55,7 @@ def get_mis_comentarios(current_user: str = Depends(get_current_user)):
 
         # Convertir ObjectId a string
         for comentario in comentarios:
-            comentario["_id"] = str(comentario["_id"])
+            comentario["id_comentario"] = str(comentario.pop("_id"))
 
         return comentarios
     except Exception as e:
@@ -63,7 +74,7 @@ def get_comentarios_by_pnr(pnr: str):
 
         # Convertir ObjectId a string
         for comentario in comentarios:
-            comentario["_id"] = str(comentario["_id"])
+            comentario["id_comentario"] = str(comentario.pop("_id"))
 
         return comentarios
     except Exception as e:
@@ -87,6 +98,7 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
                 "tags": comentario.tags,
                 "canal_contacto": comentario.canal_contacto,
                 "estado": comentario.estado,
+                "texto": comentario.texto,
                 "fecha_edicion": datetime.utcnow(),
             }
         }
@@ -94,7 +106,7 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
 
         # Retornar el comentario actualizado
         comentario_existente.update(actualizacion["$set"])
-        comentario_existente["_id"] = str(comentario_existente["_id"])  # Convertir ObjectId a string
+        comentario_existente["id_comentario"] = str(comentario_existente.pop("_id"))  # Convertir ObjectId a string
         return comentario_existente
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al actualizar el comentario: {e}")

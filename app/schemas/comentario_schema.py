@@ -11,7 +11,7 @@ class ComentarioCreate(BaseModel):
 
 
 class Comentario(ComentarioCreate):
-    _id: str = Field(..., description="ID único del comentario en MongoDB.")
+    id_comentario: str = Field(..., description="ID único del comentario en MongoDB.")  # Cambiado de `_id` a `id_comentario`
     fecha_creacion: str = Field(..., description="Fecha y hora de creación del comentario.")
     usuario: str = Field(..., description="Usuario que creó el comentario.")
     fecha_edicion: Optional[str] = Field(None, description="Fecha y hora de la última edición del comentario.")

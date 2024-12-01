@@ -28,3 +28,14 @@ def handle_api_error(error):
     Maneja errores y devuelve un formato estándar para respuestas de error.
     """
     return {"error": str(error)}
+
+
+def generar_id_usuario():
+    """
+    Genera un ID único para los usuarios en formato 'JXXXX'.
+    """
+    last_user = usuarios_collection.find_one(sort=[("id_usuario", -1)])
+    if not last_user:
+        return "J0001"
+    last_id = int(last_user["id_usuario"][1:])
+    return f"J{last_id + 1:04d}"

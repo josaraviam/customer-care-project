@@ -1,16 +1,16 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List
 
-class Comentario(BaseModel):
-    id_caso: int = Field(..., description="ID del caso al que está asociado el comentario")
-    comentarios: str = Field(..., description="Texto del comentario")
-    tags: List[str] = Field(..., description="Lista de etiquetas asociadas al comentario")
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id_caso": 123,
-                "comentarios": "El cliente solicita más información sobre el caso.",
-                "tags": ["urgente", "consulta"]
-            }
-        }
+class ComentarioCreate(BaseModel):
+    pnr: str
+    tags: List[str]
+    canal_contacto: str
+    estado: str
+    texto: str
+
+
+class Comentario(ComentarioCreate):
+    _id: str
+    fecha_creacion: str
+    usuario: str

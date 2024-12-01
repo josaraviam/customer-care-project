@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from app.schemas.caso_schema import Caso
+import json
+from app.schemas.caso_schema import Caso, Comentario
 from app.db.mysql_connector import mysql_connection
 
 router = APIRouter()
@@ -14,17 +15,21 @@ def create_caso(caso: Caso):
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO casos (fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios)
+                query = """
+                    INSERT INTO casos (fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios_historial)
                     VALUES (%s, %s, %s, %s, %s)
-                """, (
+                """
+                comentarios_json = json.dumps(
+                    [coment.dict() for coment in caso.comentarios_historial]) if caso.comentarios_historial else None
+                cursor.execute(query, (
                     caso.fecha_contacto,
                     caso.canal_contacto,
                     caso.pnr,
                     caso.tipo_caso,
-                    caso.comentarios,
+                    comentarios_json
                 ))
                 connection.commit()
+                caso.id_caso = cursor.lastrowid  # Recuperar el ID generado
         return caso
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear el caso: {e}")
@@ -38,24 +43,22 @@ def list_casos():
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios 
+                query = """
+                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios_historial
                     FROM casos
-                """)
+                """
+                cursor.execute(query)
                 rows = cursor.fetchall()
-
-        casos = [
-            {
-                "id_caso": row[0],
-                "fecha_contacto": row[1].strftime("%Y-%m-%d") if row[1] else None,  # Convertir fecha a string
-                "canal_contacto": row[2],
-                "pnr": row[3],
-                "tipo_caso": row[4],
-                "comentarios": row[5],
-            }
-            for row in rows
+        return [
+            Caso(
+                id_caso=row[0],
+                fecha_contacto=row[1].strftime("%Y-%m-%d") if row[1] else None,
+                canal_contacto=row[2],
+                pnr=row[3],
+                tipo_caso=row[4],
+                comentarios_historial=json.loads(row[5]) if row[5] else None
+            ) for row in rows
         ]
-        return casos
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener los casos: {e}")
 
@@ -68,60 +71,29 @@ def get_caso_by_pnr(pnr: str):
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios
+                query = """
+                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios_historial
                     FROM casos
                     WHERE pnr = %s
-                """, (pnr,))
+                """
+                cursor.execute(query, (pnr,))
                 rows = cursor.fetchall()
 
         if not rows:
             raise HTTPException(status_code=404, detail="No se encontraron casos para el PNR proporcionado.")
 
-        casos = [
+        return [
             Caso(
                 id_caso=row[0],
                 fecha_contacto=row[1].strftime("%Y-%m-%d") if row[1] else None,
                 canal_contacto=row[2],
                 pnr=row[3],
                 tipo_caso=row[4],
-                comentarios=row[5],
-            )
-            for row in rows
+                comentarios_historial=json.loads(row[5]) if row[5] else None
+            ) for row in rows
         ]
-        return casos
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al buscar los casos por PNR: {e}")
-
-
-@router.get("/{caso_id}", response_model=Caso)
-def get_caso(caso_id: int):
-    """
-    Busca un caso por su ID único.
-    """
-    try:
-        with mysql_connection() as connection:
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso, comentarios
-                    FROM casos
-                    WHERE id_caso = %s
-                """, (caso_id,))
-                row = cursor.fetchone()
-
-        if not row:
-            raise HTTPException(status_code=404, detail="Caso no encontrado.")
-
-        return Caso(
-            id_caso=row[0],
-            fecha_contacto=row[1],
-            canal_contacto=row[2],
-            pnr=row[3],
-            tipo_caso=row[4],
-            comentarios=row[5],
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al buscar el caso: {e}")
 
 
 @router.put("/{caso_id}", response_model=Caso)
@@ -132,17 +104,20 @@ def update_caso(caso_id: int, caso: Caso):
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("""
+                query = """
                     UPDATE casos
-                    SET fecha_contacto = %s, canal_contacto = %s, pnr = %s, tipo_caso = %s, comentarios = %s
+                    SET fecha_contacto = %s, canal_contacto = %s, pnr = %s, tipo_caso = %s, comentarios_historial = %s
                     WHERE id_caso = %s
-                """, (
+                """
+                comentarios_json = json.dumps(
+                    [coment.dict() for coment in caso.comentarios_historial]) if caso.comentarios_historial else None
+                cursor.execute(query, (
                     caso.fecha_contacto,
                     caso.canal_contacto,
                     caso.pnr,
                     caso.tipo_caso,
-                    caso.comentarios,
-                    caso_id,
+                    comentarios_json,
+                    caso_id
                 ))
                 connection.commit()
 

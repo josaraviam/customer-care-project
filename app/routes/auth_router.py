@@ -1,37 +1,50 @@
-from fastapi import APIRouter, HTTPException
-from app.schemas.usuario_schema import UsuarioCreate, UsuarioLogin
+from fastapi import APIRouter, HTTPException, Depends
+from app.schemas.usuario_schema import UsuarioCreate, UsuarioLogin, Usuario
 from app.db.mongodb_connector import usuarios_collection
 from app.utils.hashing import hash_password, verify_password
-from app.utils.helpers import generar_id_usuario
+from app.utils.jwt_utils import is_admin
 from jose import jwt
+from datetime import datetime
 from app.config import JWT_SECRET_KEY
 
 router = APIRouter()
 
 
-@router.post("/register")
-def register_user(user: UsuarioCreate):
+@router.post("/register", response_model=Usuario)
+def register_user(user: UsuarioCreate, is_admin_user: bool = Depends(is_admin)):
+    """
+    Registra un nuevo usuario. Solo permitido para administradores.
+    """
+    if not is_admin_user:
+        raise HTTPException(status_code=403, detail="Solo los administradores pueden crear usuarios.")
+
+    # Verificar que el correo no esté duplicado
     if usuarios_collection.find_one({"email": user.email}):
         raise HTTPException(status_code=400, detail="El email ya está registrado.")
 
-    nuevo_id = generar_id_usuario()
+    # Crear el usuario con los datos requeridos
     hashed_password = hash_password(user.password)
-    usuario = {
-        "id_usuario": nuevo_id,
+    nuevo_usuario = {
+        "nombre": user.nombre,
         "email": user.email,
         "hashed_password": hashed_password,
-        "nombre": user.nombre,
         "fecha_creacion": datetime.utcnow(),
     }
-    usuarios_collection.insert_one(usuario)
-    return {"id_usuario": nuevo_id, "detail": "Usuario registrado exitosamente."}
+    usuarios_collection.insert_one(nuevo_usuario)
+
+    return Usuario(**nuevo_usuario)
 
 
 @router.post("/login")
 def login_user(credentials: UsuarioLogin):
+    """
+    Inicia sesión y retorna un token JWT si las credenciales son válidas.
+    """
+    # Buscar al usuario por email
     user = usuarios_collection.find_one({"email": credentials.email})
     if not user or not verify_password(credentials.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Credenciales inválidas.")
 
-    token = jwt.encode({"id_usuario": user["id_usuario"]}, JWT_SECRET_KEY, algorithm="HS256")
+    # Generar el token JWT
+    token = jwt.encode({"id_usuario": str(user["_id"])}, JWT_SECRET_KEY, algorithm="HS256")
     return {"access_token": token, "token_type": "bearer"}

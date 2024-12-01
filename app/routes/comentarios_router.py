@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from datetime import datetime
+from bson import ObjectId
 from app.schemas.comentario_schema import ComentarioCreate, Comentario
 from app.db.mongodb_connector import mongo_db
 from app.utils.jwt_utils import get_current_user, is_admin
 
 router = APIRouter()
+
 
 @router.post("/", response_model=Comentario)
 def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(get_current_user)):
@@ -16,6 +18,7 @@ def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(
         nuevo_comentario = {
             "pnr": comentario.pnr,
             "fecha_creacion": datetime.utcnow(),
+            "fecha_edicion": None,  # Sin edición inicial
             "usuario": current_user,
             "tags": comentario.tags,
             "canal_contacto": comentario.canal_contacto,
@@ -49,7 +52,7 @@ def get_mis_comentarios(current_user: str = Depends(get_current_user)):
 
 
 @router.get("/pnr/{pnr}", response_model=List[Comentario])
-def get_comentarios_by_pnr(pnr: str, current_user: str = Depends(get_current_user)):
+def get_comentarios_by_pnr(pnr: str):
     """
     Busca todos los comentarios asociados a un PNR en MongoDB.
     """
@@ -81,7 +84,6 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
         # Actualizar el comentario
         actualizacion = {
             "$set": {
-                "pnr": comentario.pnr,
                 "tags": comentario.tags,
                 "canal_contacto": comentario.canal_contacto,
                 "estado": comentario.estado,

@@ -5,6 +5,7 @@ from app.db.mysql_connector import mysql_connection
 
 router = APIRouter()
 
+
 @router.post("/", response_model=Caso)
 def create_caso(caso: Caso):
     """
@@ -27,6 +28,7 @@ def create_caso(caso: Caso):
         return caso
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear el caso: {e}")
+
 
 @router.get("/", response_model=List[Caso])
 def list_casos():
@@ -56,6 +58,7 @@ def list_casos():
         return casos
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener los casos: {e}")
+
 
 @router.get("/pnr/{pnr}", response_model=List[Caso])
 def get_caso_by_pnr(pnr: str):
@@ -90,6 +93,7 @@ def get_caso_by_pnr(pnr: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al buscar los casos por PNR: {e}")
 
+
 @router.get("/{caso_id}", response_model=Caso)
 def get_caso(caso_id: int):
     """
@@ -119,6 +123,7 @@ def get_caso(caso_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al buscar el caso: {e}")
 
+
 @router.put("/{caso_id}", response_model=Caso)
 def update_caso(caso_id: int, caso: Caso):
     """
@@ -146,6 +151,7 @@ def update_caso(caso_id: int, caso: Caso):
         return caso
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al actualizar el caso: {e}")
+
 
 @router.delete("/{caso_id}")
 def delete_caso(caso_id: int):

@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from app.db.mysql_connector import get_mysql_connection, initialize_database
 from app.routes import casos_router, comentarios_router, backup_router
+from app.routes.auth_router import router as auth_router
 
 app = FastAPI(title="Customer Care API")
+
 
 @app.on_event("startup")
 def validate_db_connection():
@@ -24,6 +26,7 @@ initialize_database()
 app.include_router(casos_router.router, prefix="/api/casos", tags=["Casos"])
 app.include_router(comentarios_router.router, prefix="/api/comentarios", tags=["Comentarios"])
 app.include_router(backup_router.router, prefix="/api/backup", tags=["BackUp"])
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 
 
 @app.get("/")

@@ -3,6 +3,7 @@ from utils.backup import backup_mysql, backup_mongodb
 
 router = APIRouter()
 
+
 # Ruta para realizar el respaldo de MySQL
 @router.post("/mysql")
 def backup_mysql_route():
@@ -11,6 +12,7 @@ def backup_mysql_route():
         return {"message": "Respaldo de MySQL completado exitosamente."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al respaldar MySQL: {e}")
+
 
 # Ruta para realizar el respaldo de MongoDB
 @router.post("/mongodb")

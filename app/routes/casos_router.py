@@ -5,6 +5,7 @@ from app.db.mysql_connector import mysql_connection
 
 router = APIRouter()
 
+
 @router.post("/", response_model=Caso)
 def create_caso(caso: Caso):
     """
@@ -57,7 +58,6 @@ def list_casos():
         return casos
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener los casos: {e}")
-
 
 
 @router.get("/pnr/{pnr}", response_model=List[Caso])

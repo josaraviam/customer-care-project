@@ -11,5 +11,28 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT", 3306)  # Valor por defecto: 3306
 MYSQL_DB = os.getenv("MYSQL_DB")
 
-# Variables de configuración
+# Variables de configuración de MongoDB
 MONGO_URI = os.getenv("MONGO_URI")
+
+# Secret JWT
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+
+# Validaciones
+missing_env_vars = []
+
+if not MYSQL_USER:
+    missing_env_vars.append("MYSQL_USER")
+if not MYSQL_PASSWORD:
+    missing_env_vars.append("MYSQL_PASSWORD")
+if not MYSQL_HOST:
+    missing_env_vars.append("MYSQL_HOST")
+if not MYSQL_DB:
+    missing_env_vars.append("MYSQL_DB")
+if not MONGO_URI:
+    missing_env_vars.append("MONGO_URI")
+if not JWT_SECRET_KEY:
+    missing_env_vars.append("JWT_SECRET_KEY")
+
+# Si falta alguna variable, se lanza una excepción
+if missing_env_vars:
+    raise ValueError(f"Faltan las siguientes configuraciones en el entorno: {', '.join(missing_env_vars)}. Verifica tu archivo .env.")

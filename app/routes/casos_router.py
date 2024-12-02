@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List, Dict
 from app.schemas.caso_schema import Caso
 from app.db.mysql_connector import mysql_connection
@@ -8,13 +8,11 @@ from app.utils.jwt_utils import is_admin
 router = APIRouter()
 
 
-@router.post("/", response_model=Caso)
-def create_caso(caso: Caso, is_admin_user: bool = Depends(is_admin)):
+@router.post("/", response_model=Caso, status_code=status.HTTP_201_CREATED)
+def create_caso(caso: Caso):
     """
-    Crea un nuevo caso en la base de datos MySQL. Solo permitido para administradores.
+    Crea un nuevo caso en la base de datos MySQL. Disponible para todos los usuarios.
     """
-    if not is_admin_user:
-        raise HTTPException(status_code=403, detail="Solo los administradores pueden crear casos.")
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
@@ -31,18 +29,20 @@ def create_caso(caso: Caso, is_admin_user: bool = Depends(is_admin)):
                 ))
                 connection.commit()
                 caso.id_caso = cursor.lastrowid  # Obtener el ID generado automáticamente
+
         return caso
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear el caso: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno al crear el caso: {str(e)}"
+        )
 
 
-@router.put("/{caso_id}", response_model=Caso)
-def update_caso(caso_id: int, caso: Caso, is_admin_user: bool = Depends(is_admin)):
+@router.put("/{caso_id}", response_model=Caso, status_code=status.HTTP_200_OK)
+def update_caso(caso_id: int, caso: Caso):
     """
-    Actualiza un caso existente en MySQL. Solo permitido para administradores.
+    Actualiza un caso existente en MySQL. Disponible para todos los usuarios.
     """
-    if not is_admin_user:
-        raise HTTPException(status_code=403, detail="Solo los administradores pueden actualizar casos.")
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
@@ -61,19 +61,29 @@ def update_caso(caso_id: int, caso: Caso, is_admin_user: bool = Depends(is_admin
                 connection.commit()
 
         if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Caso no encontrado.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Caso no encontrado para la actualización."
+            )
+
         return caso
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al actualizar el caso: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno al actualizar el caso: {str(e)}"
+        )
 
 
-@router.delete("/{caso_id}")
+@router.delete("/{caso_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_caso(caso_id: int, is_admin_user: bool = Depends(is_admin)):
     """
     Elimina un caso por su ID único en MySQL. Solo permitido para administradores.
     """
     if not is_admin_user:
-        raise HTTPException(status_code=403, detail="Solo los administradores pueden eliminar casos.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden eliminar casos."
+        )
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
@@ -81,7 +91,14 @@ def delete_caso(caso_id: int, is_admin_user: bool = Depends(is_admin)):
                 connection.commit()
 
         if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Caso no encontrado.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Caso no encontrado para eliminar."
+            )
+
         return {"detail": "Caso eliminado exitosamente."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al eliminar el caso: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno al eliminar el caso: {str(e)}"
+        )

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List, Dict
-from app.schemas.caso_schema import Caso
+from app.schemas.caso_schema import CasoSchema as Caso
 from app.db.mysql_connector import mysql_connection
 from app.db.mongodb_connector import mongo_db
 from app.utils.jwt_utils import is_admin

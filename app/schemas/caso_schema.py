@@ -1,14 +1,16 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
 from typing import List, Optional
 from app.schemas.comentario_schema import ComentarioResponseSchema  # Esquema, no modelo
+
 
 class CasoSchema(BaseModel):
     id_caso: Optional[int] = Field(None, description="ID único del caso en la base de datos.")
     fecha_contacto: str = Field(..., description="Fecha del contacto en formato ISO.")
     canal_contacto: str = Field(..., description="Canal del contacto.")
-    pnr: str = Field(..., min_length=6, max_length=6, description="PNR único.")
+    pnr: constr(min_length=6, max_length=6) = Field(..., description="PNR único.")
     tipo_caso: str = Field(..., description="Tipo de caso.")
     comentarios: List[ComentarioResponseSchema] = Field(default=[], description="Comentarios asociados.")
+
 
     class Config:
         json_schema_extra = {

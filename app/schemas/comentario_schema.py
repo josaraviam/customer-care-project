@@ -25,7 +25,7 @@ class Config:
         "example": {
             "id_comentario": "64b37bc7d2f5f8e5e3b76c39",
             "pnr": "ABC123",
-            "fecha_creacion": "2024-11-20T14:30:00Z",  # Asegúrate de que esta línea sea correcta
+            "fecha_creacion": "2024-11-20T14:30:00Z",
             "usuario": "admin@example.com",
             "tags": ["urgente", "reembolso"],
             "canal_contacto": "Facebook",

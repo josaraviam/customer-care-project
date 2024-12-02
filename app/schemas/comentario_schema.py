@@ -1,11 +1,11 @@
 from pydantic import BaseModel, Field
-from datetime import datetime
-from typing import List, Optional
+from typing import List
 
-class ComentarioCreate(BaseModel):
+
+class ComentarioCreateSchema(BaseModel):
     """
     Esquema para la creación de comentarios.
-    El campo 'usuario' será asignado automáticamente desde el backend.
+    Este esquema se utiliza para validar los datos enviados al endpoint.
     """
     pnr: str = Field(..., min_length=6, max_length=6, description="PNR asociado al comentario.")
     tags: List[str] = Field(..., description="Etiquetas asociadas al comentario.")
@@ -13,22 +13,24 @@ class ComentarioCreate(BaseModel):
     estado: str = Field(..., description="Estado actual del comentario (por ejemplo, 'pendiente', 'resuelto').")
     texto: str = Field(..., min_length=1, description="Texto del comentario.")
 
-class Comentario(BaseModel):
+
+class ComentarioResponseSchema(BaseModel):
     """
-    Esquema completo para respuesta y validación de datos de comentarios.
-    Incluye todos los campos, incluidos los generados automáticamente.
+    Esquema para la respuesta de comentarios.
+    Este esquema se utiliza para estructurar la respuesta enviada al cliente.
     """
     id_comentario: str = Field(..., alias="_id", description="ID único del comentario en MongoDB.")
     pnr: str = Field(..., min_length=6, max_length=6, description="PNR asociado al comentario.")
-    fecha_creacion: datetime = Field(..., description="Fecha y hora de creación del comentario en formato ISO.")
+    fecha_creacion: str = Field(..., description="Fecha y hora de creación del comentario en formato ISO.")
     usuario: str = Field(..., description="Usuario que creó el comentario.")
     tags: List[str] = Field(..., description="Etiquetas asociadas al comentario.")
     canal_contacto: str = Field(..., description="Canal de contacto donde se originó el comentario.")
     estado: str = Field(..., description="Estado actual del comentario.")
     texto: str = Field(..., description="Texto del comentario.")
-    fecha_edicion: Optional[datetime] = Field(None, description="Fecha y hora de la última edición del comentario.")
+    fecha_edicion: Optional[str] = Field(None, description="Fecha y hora de la última edición del comentario.")
 
     class Config:
+        allow_population_by_field_name = True
         schema_extra = {
             "example": {
                 "id_comentario": "64b37bc7d2f5f8e5e3b76c39",

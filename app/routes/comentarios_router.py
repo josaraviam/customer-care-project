@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List
 from datetime import datetime
+from bson import ObjectId
 from app.schemas.comentario_schema import ComentarioCreate, Comentario
 from app.db.mongodb_connector import mongo_db
 from app.utils.jwt_utils import get_current_user, is_admin
 from app.utils.helpers import validar_object_id, procesar_comentarios
 
 router = APIRouter()
-
 
 @router.post("/", response_model=Comentario, status_code=status.HTTP_201_CREATED)
 def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(get_current_user)):
@@ -16,9 +16,9 @@ def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(
     """
     nuevo_comentario = {
         "pnr": comentario.pnr,
-        "fecha_creacion": datetime.utcnow(),
+        "fecha_creacion": datetime.utcnow().isoformat(),
         "fecha_edicion": None,
-        "usuario": current_user,  # Usuario autenticado extraído del JWT
+        "usuario": current_user,
         "tags": comentario.tags,
         "canal_contacto": comentario.canal_contacto,
         "estado": comentario.estado,
@@ -27,15 +27,14 @@ def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(
 
     try:
         result = mongo_db["comentarios"].insert_one(nuevo_comentario)
-        nuevo_comentario["id_comentario"] = str(result.inserted_id)  # Convertir ObjectId a string
+        nuevo_comentario["id_comentario"] = str(result.inserted_id)
         return nuevo_comentario
     except Exception as e:
-        # Log del error para depuración
-        print(f"Error al crear comentario: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error interno al crear el comentario."
         )
+
 
 @router.get("/mis-comentarios", response_model=List[Comentario], status_code=status.HTTP_200_OK)
 def get_mis_comentarios(current_user: str = Depends(get_current_user)):
@@ -53,7 +52,7 @@ def get_mis_comentarios(current_user: str = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error interno al recuperar los comentarios: {str(e)}"
+            detail="Error interno al recuperar los comentarios."
         )
 
 
@@ -73,7 +72,7 @@ def get_comentarios_by_pnr(pnr: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error interno al buscar comentarios por PNR: {str(e)}"
+            detail="Error interno al buscar comentarios por PNR."
         )
 
 
@@ -98,7 +97,7 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
                 "canal_contacto": comentario.canal_contacto,
                 "estado": comentario.estado,
                 "texto": comentario.texto,
-                "fecha_edicion": datetime.utcnow(),
+                "fecha_edicion": datetime.utcnow().isoformat(),
             }
         }
         mongo_db["comentarios"].update_one({"_id": comentario_id}, actualizacion)
@@ -108,17 +107,16 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
             "comentario_id": str(comentario_id),
             "usuario": current_user,
             "cambios": actualizacion["$set"],
-            "fecha_edicion": datetime.utcnow(),
+            "fecha_edicion": datetime.utcnow().isoformat(),
         })
 
         comentario_existente.update(actualizacion["$set"])
         comentario_existente["id_comentario"] = str(comentario_existente.pop("_id"))
-        comentario_existente["fecha_edicion"] = comentario_existente["fecha_edicion"].isoformat()
         return comentario_existente
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error interno al actualizar el comentario: {str(e)}"
+            detail="Error interno al actualizar el comentario."
         )
 
 
@@ -127,11 +125,6 @@ def delete_comentario(comentario_id: str, is_admin_user: bool = Depends(is_admin
     """
     Elimina un comentario por su ID único en MongoDB. Solo permitido para administradores.
     """
-    if not is_admin_user:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo los administradores pueden eliminar comentarios."
-        )
     comentario_id = validar_object_id(comentario_id)
 
     try:
@@ -144,5 +137,5 @@ def delete_comentario(comentario_id: str, is_admin_user: bool = Depends(is_admin
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error interno al eliminar el comentario: {str(e)}"
+            detail="Error interno al eliminar el comentario."
         )

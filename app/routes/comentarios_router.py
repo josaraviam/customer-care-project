@@ -18,22 +18,24 @@ def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(
         "pnr": comentario.pnr,
         "fecha_creacion": datetime.utcnow(),
         "fecha_edicion": None,
-        "usuario": current_user,
+        "usuario": current_user,  # Usuario autenticado extraído del JWT
         "tags": comentario.tags,
         "canal_contacto": comentario.canal_contacto,
         "estado": comentario.estado,
         "texto": comentario.texto,
     }
+
     try:
         result = mongo_db["comentarios"].insert_one(nuevo_comentario)
-        nuevo_comentario["id_comentario"] = str(result.inserted_id)
+        nuevo_comentario["id_comentario"] = str(result.inserted_id)  # Convertir ObjectId a string
         return nuevo_comentario
     except Exception as e:
+        # Log del error para depuración
+        print(f"Error al crear comentario: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error interno al crear el comentario: {str(e)}"
+            detail="Error interno al crear el comentario."
         )
-
 
 @router.get("/mis-comentarios", response_model=List[Comentario], status_code=status.HTTP_200_OK)
 def get_mis_comentarios(current_user: str = Depends(get_current_user)):

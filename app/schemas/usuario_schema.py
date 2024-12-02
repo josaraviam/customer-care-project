@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
 
 
 class UsuarioCreate(BaseModel):
@@ -10,3 +11,9 @@ class UsuarioCreate(BaseModel):
 class UsuarioLogin(BaseModel):
     email: EmailStr = Field(..., description="Correo electrónico del usuario.")
     password: str = Field(..., description="Contraseña del usuario.")
+
+
+class Usuario(BaseModel):
+    nombre: str
+    email: EmailStr
+    fecha_creacion: datetime

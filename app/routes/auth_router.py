@@ -15,6 +15,7 @@ def register_user(user: UsuarioCreate, is_admin_user: bool = Depends(is_admin)):
     """
     Registra un nuevo usuario. Solo permitido para administradores.
     """
+    # Validar que el usuario actual es administrador
     if not is_admin_user:
         raise HTTPException(status_code=403, detail="Solo los administradores pueden crear usuarios.")
 
@@ -28,6 +29,7 @@ def register_user(user: UsuarioCreate, is_admin_user: bool = Depends(is_admin)):
         "nombre": user.nombre,
         "email": user.email,
         "hashed_password": hashed_password,
+        "is_admin": False,  # Por defecto no es administrador
         "fecha_creacion": datetime.utcnow(),
     }
     usuarios_collection.insert_one(nuevo_usuario)
@@ -45,6 +47,10 @@ def login_user(credentials: UsuarioLogin):
     if not user or not verify_password(credentials.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Credenciales inválidas.")
 
-    # Generar el token JWT
-    token = jwt.encode({"id_usuario": str(user["_id"])}, JWT_SECRET_KEY, algorithm="HS256")
+    # Generar el token JWT con is_admin
+    token = jwt.encode({
+        "id_usuario": str(user["_id"]),
+        "is_admin": user.get("is_admin", False)
+    }, JWT_SECRET_KEY, algorithm="HS256")
+
     return {"access_token": token, "token_type": "bearer"}

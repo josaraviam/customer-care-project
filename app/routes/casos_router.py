@@ -1,17 +1,20 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Dict
 from app.schemas.caso_schema import Caso
 from app.db.mysql_connector import mysql_connection
 from app.db.mongodb_connector import mongo_db
+from app.utils.jwt_utils import is_admin
 
 router = APIRouter()
 
 
 @router.post("/", response_model=Caso)
-def create_caso(caso: Caso):
+def create_caso(caso: Caso, is_admin_user: bool = Depends(is_admin)):
     """
-    Crea un nuevo caso en la base de datos MySQL.
+    Crea un nuevo caso en la base de datos MySQL. Solo permitido para administradores.
     """
+    if not is_admin_user:
+        raise HTTPException(status_code=403, detail="Solo los administradores pueden crear casos.")
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
@@ -33,79 +36,13 @@ def create_caso(caso: Caso):
         raise HTTPException(status_code=500, detail=f"Error al crear el caso: {e}")
 
 
-@router.get("/", response_model=List[Dict])
-def list_casos():
-    """
-    Devuelve una lista de todos los casos almacenados en MySQL, incluyendo sus comentarios.
-    """
-    try:
-        with mysql_connection() as connection:
-            with connection.cursor() as cursor:
-                query = """
-                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso
-                    FROM casos
-                """
-                cursor.execute(query)
-                rows = cursor.fetchall()
-
-        # Recuperar los comentarios asociados a cada PNR
-        casos = []
-        for row in rows:
-            pnr = row[3]
-            comentarios = list(mongo_db["comentarios"].find({"pnr": pnr}, {"_id": 0}))  # Recuperar comentarios por PNR
-            casos.append({
-                "id_caso": row[0],
-                "fecha_contacto": row[1].strftime("%Y-%m-%d") if row[1] else None,
-                "canal_contacto": row[2],
-                "pnr": row[3],
-                "tipo_caso": row[4],
-                "comentarios": comentarios
-            })
-
-        return casos
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener los casos: {e}")
-
-
-@router.get("/pnr/{pnr}", response_model=Dict)
-def get_caso_by_pnr(pnr: str):
-    """
-    Busca un caso por el PNR en MySQL e incluye sus comentarios desde MongoDB.
-    """
-    try:
-        with mysql_connection() as connection:
-            with connection.cursor() as cursor:
-                query = """
-                    SELECT id_caso, fecha_contacto, canal_contacto, pnr, tipo_caso
-                    FROM casos
-                    WHERE pnr = %s
-                """
-                cursor.execute(query, (pnr,))
-                row = cursor.fetchone()
-
-        if not row:
-            raise HTTPException(status_code=404, detail="No se encontró un caso con el PNR proporcionado.")
-
-        # Recuperar comentarios asociados al PNR
-        comentarios = list(mongo_db["comentarios"].find({"pnr": pnr}, {"_id": 0}))
-
-        return {
-            "id_caso": row[0],
-            "fecha_contacto": row[1].strftime("%Y-%m-%d") if row[1] else None,
-            "canal_contacto": row[2],
-            "pnr": row[3],
-            "tipo_caso": row[4],
-            "comentarios": comentarios
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al buscar el caso por PNR: {e}")
-
-
 @router.put("/{caso_id}", response_model=Caso)
-def update_caso(caso_id: int, caso: Caso):
+def update_caso(caso_id: int, caso: Caso, is_admin_user: bool = Depends(is_admin)):
     """
-    Actualiza un caso existente en MySQL.
+    Actualiza un caso existente en MySQL. Solo permitido para administradores.
     """
+    if not is_admin_user:
+        raise HTTPException(status_code=403, detail="Solo los administradores pueden actualizar casos.")
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:
@@ -131,10 +68,12 @@ def update_caso(caso_id: int, caso: Caso):
 
 
 @router.delete("/{caso_id}")
-def delete_caso(caso_id: int):
+def delete_caso(caso_id: int, is_admin_user: bool = Depends(is_admin)):
     """
-    Elimina un caso por su ID único en MySQL.
+    Elimina un caso por su ID único en MySQL. Solo permitido para administradores.
     """
+    if not is_admin_user:
+        raise HTTPException(status_code=403, detail="Solo los administradores pueden eliminar casos.")
     try:
         with mysql_connection() as connection:
             with connection.cursor() as cursor:

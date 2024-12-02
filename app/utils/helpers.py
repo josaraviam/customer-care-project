@@ -39,3 +39,26 @@ def generar_id_usuario():
         return "J0001"
     last_id = int(last_user["id_usuario"][1:])
     return f"J{last_id + 1:04d}"
+
+
+def validar_object_id(id_: str) -> ObjectId:
+    """
+    Valida y convierte un ID de cadena a ObjectId.
+    """
+    try:
+        return ObjectId(id_)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID inválido.")
+
+
+def procesar_comentarios(comentarios: List[dict]) -> List[dict]:
+    """
+    Convierte '_id' a 'id_comentario' en una lista de comentarios.
+    """
+    for comentario in comentarios:
+        comentario["id_comentario"] = str(comentario.pop("_id"))
+        comentario["fecha_creacion"] = comentario["fecha_creacion"].isoformat() if comentario.get(
+            "fecha_creacion") else None
+        comentario["fecha_edicion"] = comentario["fecha_edicion"].isoformat() if comentario.get(
+            "fecha_edicion") else None
+    return comentarios

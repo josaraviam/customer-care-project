@@ -1,22 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from datetime import datetime
-from bson import ObjectId
 from app.schemas.comentario_schema import ComentarioCreate, Comentario
 from app.db.mongodb_connector import mongo_db
 from app.utils.jwt_utils import get_current_user, is_admin
+from app.utils.helpers import validar_object_id, procesar_comentarios  # Importamos las funciones desde utils
 
 router = APIRouter()
-
-
-def validar_object_id(id_: str) -> ObjectId:
-    """
-    Valida y convierte un ID de cadena a ObjectId.
-    """
-    try:
-        return ObjectId(id_)
-    except Exception:
-        raise HTTPException(status_code=400, detail="ID inválido.")
 
 
 @router.post("/", response_model=Comentario)
@@ -48,9 +38,7 @@ def get_mis_comentarios(current_user: str = Depends(get_current_user)):
     if not comentarios:
         raise HTTPException(status_code=404, detail="No se encontraron comentarios para este usuario.")
 
-    for comentario in comentarios:
-        comentario["id_comentario"] = str(comentario.pop("_id"))  # Convertir ObjectId a string
-    return comentarios
+    return procesar_comentarios(comentarios)
 
 
 @router.get("/pnr/{pnr}", response_model=List[Comentario])
@@ -62,9 +50,7 @@ def get_comentarios_by_pnr(pnr: str):
     if not comentarios:
         raise HTTPException(status_code=404, detail="No se encontraron comentarios para este PNR.")
 
-    for comentario in comentarios:
-        comentario["id_comentario"] = str(comentario.pop("_id"))
-    return comentarios
+    return procesar_comentarios(comentarios)
 
 
 @router.put("/{comentario_id}", response_model=Comentario)
@@ -93,6 +79,7 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
 
     comentario_existente.update(actualizacion["$set"])
     comentario_existente["id_comentario"] = str(comentario_existente.pop("_id"))  # Convertir ObjectId a string
+    comentario_existente["fecha_edicion"] = comentario_existente["fecha_edicion"].isoformat()
     return comentario_existente
 
 
@@ -101,6 +88,8 @@ def delete_comentario(comentario_id: str, is_admin_user: bool = Depends(is_admin
     """
     Elimina un comentario por su ID único en MongoDB (solo permitido para administradores).
     """
+    if not is_admin_user:
+        raise HTTPException(status_code=403, detail="Solo los administradores pueden eliminar comentarios.")
     comentario_id = validar_object_id(comentario_id)
 
     result = mongo_db["comentarios"].delete_one({"_id": comentario_id})

@@ -1,4 +1,7 @@
 from datetime import datetime
+from typing import List
+from bson import ObjectId  # Asegúrate de importar ObjectId
+from fastapi import HTTPException
 
 
 def validate_date_format(date_input, date_format):

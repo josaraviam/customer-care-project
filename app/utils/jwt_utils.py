@@ -2,6 +2,9 @@ from jose import jwt, JWTError
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException
 from app.config import JWT_SECRET_KEY
+from typing import List
+from bson import ObjectId  # Asegúrate de importar ObjectId
+from fastapi import HTTPException
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -31,8 +34,6 @@ def generate_token(user: dict) -> str:
     token = jwt.encode(payload, JWT_SECRET_KEY, algorithm="HS256")
     return token
 
-
-# app/utils/jwt_utils.py
 
 def is_admin(token: str = Depends(oauth2_scheme)) -> bool:
     """

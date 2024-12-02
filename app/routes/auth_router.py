@@ -64,23 +64,28 @@ def register_admin(user: UsuarioCreate):
     """
     Registra el primer usuario administrador. Este endpoint debe ser usado solo una vez.
     """
-    # Verificar si ya existe un administrador en la base de datos
-    if usuarios_collection.find_one({"is_admin": True}):
-        raise HTTPException(status_code=403, detail="Ya existe un administrador registrado.")
+    try:
+        # Verificar si ya existe un administrador en la base de datos
+        if usuarios_collection.find_one({"is_admin": True}):
+            raise HTTPException(status_code=403, detail="Ya existe un administrador registrado.")
 
-    # Generar un ID único para el usuario
-    id_usuario = generar_id_usuario()
+        # Generar un ID único para el usuario
+        id_usuario = generar_id_usuario()
 
-    # Crear el usuario con los datos requeridos
-    hashed_password = hash_password(user.password)
-    nuevo_usuario = {
-        "id_usuario": id_usuario,
-        "nombre": user.nombre,
-        "email": user.email,
-        "hashed_password": hashed_password,
-        "is_admin": True,  # El primer usuario es administrador
-        "fecha_creacion": datetime.utcnow(),
-    }
-    usuarios_collection.insert_one(nuevo_usuario)
+        # Crear el usuario con los datos requeridos
+        hashed_password = hash_password(user.password)
+        nuevo_usuario = {
+            "id_usuario": id_usuario,
+            "nombre": user.nombre,
+            "email": user.email,
+            "hashed_password": hashed_password,
+            "is_admin": True,  # El primer usuario es administrador
+            "fecha_creacion": datetime.utcnow(),
+        }
+        usuarios_collection.insert_one(nuevo_usuario)
 
-    return Usuario(**nuevo_usuario)
+        return Usuario(**nuevo_usuario)
+
+    except Exception as e:
+        print(f"Error interno: {e}")  # Log detallado
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")

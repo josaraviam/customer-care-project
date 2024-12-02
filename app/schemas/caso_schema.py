@@ -21,7 +21,7 @@ class Caso(BaseModel):
                 "tipo_caso": "Reclamo",
                 "comentarios": [
                     {
-                        "_id": "64b37bc7d2f5f8e5e3b76c39",
+                        "id_comentario": "64b37bc7d2f5f8e5e3b76c39",  # Cambiado a id_comentario
                         "pnr": "ABC123",
                         "tags": ["urgente", "reembolso"],
                         "canal_contacto": "Facebook",

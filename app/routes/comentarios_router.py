@@ -9,6 +9,7 @@ from app.utils.helpers import validar_object_id, procesar_comentarios
 
 router = APIRouter()
 
+
 @router.post("/", response_model=Comentario, status_code=status.HTTP_201_CREATED)
 def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(get_current_user)):
     """
@@ -32,7 +33,7 @@ def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al crear el comentario."
+            detail=f"Error interno al crear el comentario: {str(e)}"
         )
 
 
@@ -52,7 +53,7 @@ def get_mis_comentarios(current_user: str = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al recuperar los comentarios."
+            detail=f"Error interno al recuperar los comentarios: {str(e)}"
         )
 
 
@@ -72,7 +73,7 @@ def get_comentarios_by_pnr(pnr: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al buscar comentarios por PNR."
+            detail=f"Error interno al buscar comentarios por PNR: {str(e)}"
         )
 
 
@@ -102,7 +103,6 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
         }
         mongo_db["comentarios"].update_one({"_id": comentario_id}, actualizacion)
 
-        # Registrar el historial de ediciones
         mongo_db["historial_ediciones"].insert_one({
             "comentario_id": str(comentario_id),
             "usuario": current_user,
@@ -116,7 +116,7 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al actualizar el comentario."
+            detail=f"Error interno al actualizar el comentario: {str(e)}"
         )
 
 
@@ -137,5 +137,26 @@ def delete_comentario(comentario_id: str, is_admin_user: bool = Depends(is_admin
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al eliminar el comentario."
+            detail=f"Error interno al eliminar el comentario: {str(e)}"
+        )
+
+
+@router.get("/all", response_model=List[Comentario], status_code=status.HTTP_200_OK)
+def get_all_comentarios():
+    """
+    Recupera todos los comentarios de la base de datos.
+    Esta ruta no requiere autenticación y es útil para pruebas.
+    """
+    try:
+        comentarios = list(mongo_db["comentarios"].find())
+        if not comentarios:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontraron comentarios en la base de datos."
+            )
+        return procesar_comentarios(comentarios)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno al recuperar todos los comentarios: {str(e)}"
         )

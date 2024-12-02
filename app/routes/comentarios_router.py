@@ -1,16 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from datetime import datetime
-from bson import ObjectId
-from app.schemas.comentario_schema import ComentarioCreate, Comentario
-from app.db.mongodb_connector import mongo_db
-from app.utils.jwt_utils import get_current_user, is_admin
-
-router = APIRouter()
-
-from fastapi import APIRouter, HTTPException, Depends
-from typing import List
-from datetime import datetime
 from bson import ObjectId  # Import necesario para trabajar con ObjectId
 from app.schemas.comentario_schema import ComentarioCreate, Comentario
 from app.db.mongodb_connector import mongo_db

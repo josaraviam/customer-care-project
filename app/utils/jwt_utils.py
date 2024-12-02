@@ -15,3 +15,14 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         return id_usuario
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido.")
+
+
+# app/utils/jwt_utils.py
+
+def is_admin(user: str) -> bool:
+    """
+    Verifica si el usuario tiene permisos de administrador.
+    """
+    # Supón que el usuario es un string que contiene los roles o similar.
+    # Este es solo un ejemplo, puedes ajustarlo según la lógica de tu sistema.
+    return "admin" in user

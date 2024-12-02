@@ -26,3 +26,4 @@ def is_admin(user: str) -> bool:
     # Supón que el usuario es un string que contiene los roles o similar.
     # Este es solo un ejemplo, puedes ajustarlo según la lógica de tu sistema.
     return "admin" in user
+

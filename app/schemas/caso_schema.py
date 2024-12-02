@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, constr
 from typing import List, Optional
-from app.schemas.comentario_schema import ComentarioResponseSchema  # Esquema, no modelo
+from app.schemas.comentario_schema import ComentarioResponseSchema  
 
 
 class CasoSchema(BaseModel):

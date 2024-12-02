@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+
 class ComentarioCreateSchema(BaseModel):
     pnr: str = Field(..., min_length=6, max_length=6, description="PNR asociado al comentario.")
     tags: List[str] = Field(..., description="Etiquetas asociadas al comentario.")
@@ -19,6 +20,10 @@ class ComentarioResponseSchema(BaseModel):
     estado: str = Field(..., description="Estado actual.")
     texto: str = Field(..., description="Texto del comentario.")
     fecha_edicion: Optional[str] = Field(None, description="Fecha de última edición.")
+
+    class Config:
+        populate_by_name = True
+
 
 class Config:
     schema_extra = {

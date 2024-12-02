@@ -2,10 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List
 from datetime import datetime
 from bson import ObjectId
-from app.schemas.comentario_schema import ComentarioCreate, Comentario
+from app.schemas.comentario_schema import (ComentarioResponseSchema as Comentario,
+                                           ComentarioCreateSchema as ComentarioCreate)
 from app.db.mongodb_connector import mongo_db
 from app.utils.jwt_utils import get_current_user, is_admin
-from app.utils.helpers import validar_object_id, procesar_comentarios
+from app.utils.helpers import validar_object_id, procesar_comentarios, convertir_objectid
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(
     """
     nuevo_comentario = {
         "pnr": comentario.pnr,
-        "fecha_creacion": datetime.utcnow().isoformat(),
+        "fecha_creacion": datetime.utcnow(),
         "fecha_edicion": None,
         "usuario": current_user,
         "tags": comentario.tags,
@@ -28,8 +29,8 @@ def create_comentario(comentario: ComentarioCreate, current_user: str = Depends(
 
     try:
         result = mongo_db["comentarios"].insert_one(nuevo_comentario)
-        nuevo_comentario["id_comentario"] = str(result.inserted_id)
-        return nuevo_comentario
+        nuevo_comentario["_id"] = result.inserted_id
+        return convertir_objectid(nuevo_comentario)  # Convertir antes de devolver
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -49,7 +50,7 @@ def get_mis_comentarios(current_user: str = Depends(get_current_user)):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No se encontraron comentarios para este usuario."
             )
-        return procesar_comentarios(comentarios)
+        return convertir_objectid(comentarios)  # Convertir antes de devolver
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -69,7 +70,7 @@ def get_comentarios_by_pnr(pnr: str):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No se encontraron comentarios para este PNR."
             )
-        return procesar_comentarios(comentarios)
+        return convertir_objectid(comentarios)  # Convertir antes de devolver
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -111,8 +112,8 @@ def update_comentario(comentario_id: str, comentario: ComentarioCreate, current_
         })
 
         comentario_existente.update(actualizacion["$set"])
-        comentario_existente["id_comentario"] = str(comentario_existente.pop("_id"))
-        return comentario_existente
+        comentario_existente["_id"] = comentario_id
+        return convertir_objectid(comentario_existente)  # Convertir antes de devolver
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -154,7 +155,7 @@ def get_all_comentarios():
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No se encontraron comentarios en la base de datos."
             )
-        return procesar_comentarios(comentarios)
+        return convertir_objectid(comentarios)  # Convertir antes de devolver
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

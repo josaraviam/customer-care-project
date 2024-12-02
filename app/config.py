@@ -11,10 +11,14 @@ MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT", 3306)  # Valor por defecto: 3306
 MYSQL_DB = os.getenv("MYSQL_DB")
 
+
 # Variables de configuración de MongoDB
 MONGO_URI = os.getenv("MONGO_URI")
 
-# Secret JWT
+# JWT
+ALGORITHM = os.getenv("JWT_ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
 # Validaciones

@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import List
-from bson import ObjectId  # Asegúrate de importar ObjectId
+from typing import List, Union
+from bson import ObjectId
 from fastapi import HTTPException
+from app.db.mongodb_connector import usuarios_collection
 
 
-def validate_date_format(date_input, date_format):
+def validate_date_format(date_input: Union[datetime, str], date_format: str) -> bool:
     """
     Valida si la entrada es una fecha válida en un formato específico.
     Puede recibir un objeto `datetime` o una cadena.
@@ -19,21 +20,21 @@ def validate_date_format(date_input, date_format):
         return False
 
 
-def format_api_response(data, message="Operación exitosa"):
+def format_api_response(data, message="Operación exitosa") -> dict:
     """
-    Formatea la respuesta para las API.
+    Formatea la respuesta estándar para las APIs.
     """
     return {"data": data, "message": message}
 
 
-def handle_api_error(error):
+def handle_api_error(error: Exception) -> dict:
     """
     Maneja errores y devuelve un formato estándar para respuestas de error.
     """
     return {"error": str(error)}
 
 
-def generar_id_usuario():
+def generar_id_usuario() -> str:
     """
     Genera un ID único para los usuarios en formato 'JXXXX'.
     """
@@ -46,7 +47,7 @@ def generar_id_usuario():
 
 def validar_object_id(id_: str) -> ObjectId:
     """
-    Valida y convierte un ID de cadena a ObjectId.
+    Valida y convierte un ID en formato string a ObjectId.
     """
     try:
         return ObjectId(id_)
@@ -56,7 +57,7 @@ def validar_object_id(id_: str) -> ObjectId:
 
 def procesar_comentarios(comentarios: List[dict]) -> List[dict]:
     """
-    Convierte '_id' a 'id_comentario' en una lista de comentarios.
+    Convierte '_id' a 'id_comentario' y las fechas a formato ISO en una lista de comentarios.
     """
     for comentario in comentarios:
         comentario["id_comentario"] = str(comentario.pop("_id"))
@@ -65,3 +66,19 @@ def procesar_comentarios(comentarios: List[dict]) -> List[dict]:
         comentario["fecha_edicion"] = comentario["fecha_edicion"].isoformat() if comentario.get(
             "fecha_edicion") else None
     return comentarios
+
+
+def convertir_objectid(documento: Union[dict, List[dict]]) -> Union[dict, List[dict]]:
+    """
+    Convierte los ObjectId a string y las fechas a formato ISO en un documento o lista de documentos.
+    """
+    if isinstance(documento, list):  # Si es una lista, procesa cada documento
+        return [convertir_objectid(doc) for doc in documento]
+    if isinstance(documento, dict):
+        if "_id" in documento:  # Convertir el ObjectId
+            documento["id_comentario"] = str(documento["_id"])
+            del documento["_id"]
+        for clave, valor in documento.items():  # Convertir fechas
+            if isinstance(valor, datetime):
+                documento[clave] = valor.isoformat()
+    return documento

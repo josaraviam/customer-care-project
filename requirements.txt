@@ -10,3 +10,4 @@ python-jose
 pydantic[email]
 python-multipart
 python-decouple
+starlette

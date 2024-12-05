@@ -98,7 +98,7 @@ def register_admin(user: UsuarioCreate, is_admin_user: bool = Depends(is_admin))
 @router.post("/login", status_code=status.HTTP_200_OK)
 def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
     """
-    Inicia sesión usando id_usuario o email y retorna access_token y refresh_token.
+    Inicia sesión usando id_usuario o email y retorna access_token, refresh_token y is_admin.
     """
     username = form_data.username
     password = form_data.password
@@ -132,10 +132,12 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
             detail=f"Error al generar los tokens de autenticación: {str(e)}"
         )
 
+    # Retornar los tokens junto con is_admin
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "is_admin": user.get("is_admin", False)  # Incluir el valor de is_admin
     }
 
 

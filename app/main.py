@@ -11,7 +11,7 @@ app = FastAPI(title="Customer Care API")
 # Configuración del middleware de CORS
 app.add_middleware(
     CORSMiddleware,  # Usa directamente la clase CORSMiddleware aquí
-    allow_origins=["*"],  # Permitir solicitudes desde el front-end
+    allow_origins=["https://witty-pond-032d33e0f.4.azurestaticapps.net/index.html"],  # Permitir solicitudes desde el front-end
     allow_credentials=True,  # Permitir envío de credenciales (como cookies o tokens)
     allow_methods=["*"],  # Permitir todos los métodos HTTP (GET, POST, OPTIONS, etc.)
     allow_headers=["*"],  # Permitir todos los encabezados
